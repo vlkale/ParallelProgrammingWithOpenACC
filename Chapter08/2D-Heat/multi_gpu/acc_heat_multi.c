@@ -43,7 +43,7 @@ void step_kernel_cpu(int ni,
     // loop over all points in domain (not boundary points)
 #pragma acc kernels present(temp_in[0:ni*nj], temp_out[0:ni*nj]) 
 {
-	#pragma acc loop independent 
+   #pragma acc loop independent 
     for (j=1; j < nj-1; j++) {
 	    #pragma acc loop independent
         for (i=1; i < ni-1; i++) {
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
     LDA = ni + 2;
 
     // main iteration loop 
-#pragma omp parallel private(istep) 
+#pragma omp parallel private(istep)
 {
 	double *temp1, *temp2, *temp_tmp;
 	int tid = omp_get_thread_num();
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
     temp1 = temp1_h + tid*rows*LDA;
     temp2 = temp2_h + tid*rows*LDA;
 
-  #pragma acc data copyin(temp1[0:(rows+2)*LDA]) copyin(temp2[0:(rows+2)*LDA])
+  #pragma acc data copyin(temp1[0:(rows+2)*LDA]) copyin(temp2[0:(rows+2)*LDA]) 
   {
 	for(istep=0; istep < nstep; istep++)
 	{
