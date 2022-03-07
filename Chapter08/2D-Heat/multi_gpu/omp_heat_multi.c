@@ -40,12 +40,7 @@ void step_kernel_cpu(int ni,
     int i, j, i00, im10, ip10, i0m1, i0p1;
     double d2tdx2, d2tdy2;
 
-    // loop over all points in domain (not boundary points)                                                                                                                                                                                                                                                         
-
- // #pragma acc kernels present(temp_in[0:ni*nj], temp_out[0:ni*nj])                                                                                                                                                                                                                                                
-   #pragma omp target data map(tofrom: temp_in[0:ni*nj], temp_out[0:ni*nj])
-   {
-
+    // loop over all points in domain (not boundary points)                                                                                                                                                                                                                                                    87                                                                                                                                                                                                                                  0
   // #pragma acc loop independent                                                                                                                                                                                                                                                                                   
         #pragma omp target teams distribute parallel for simd
     for (j=1; j < nj-1; j++) {
