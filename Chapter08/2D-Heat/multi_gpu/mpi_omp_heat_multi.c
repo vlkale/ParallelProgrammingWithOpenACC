@@ -186,7 +186,9 @@ int main(int argc, char *argv[])
 	    }
 
 	  #pragma omp barrier
-	 
+
+	  if (numProcs > 1)
+	    {
 	  #pragma omp master
 	  {
 	    
@@ -231,6 +233,7 @@ int main(int argc, char *argv[])
 		  }
 	      }
 	  }
+	    }
 
 	  
 	  // TODO: downsample print to test correctness	  

@@ -7,9 +7,19 @@
 #include <unistd.h>
 #include <omp.h>
 
+#include <cuda.h>
+
 #include <time.h>
 
+
+
 #define I2D(ni, i, j) ((i) + (ni)*(j))
+
+
+#ifdef OMPTARGET_UVM
+#pragma omp requires unified_shared_memory
+#endif
+
 
 #pragma omp declare target
 void step_kernel_cpu(int ni,
@@ -19,13 +29,12 @@ void step_kernel_cpu(int ni,
                      double *temp_out) {
     int i, j, i00, im10, ip10, i0m1, i0p1;
     double d2tdx2, d2tdy2;
-   
-#pragma omp target teams distribute parallel for simd collapse(2)
 
-<<<<<<< HEAD
+#ifdef OMPTARGET_UVM
+#pragma omp target teams distribute parallel for simd collapse(2) is_device_ptr(temp_in, temp_out)
+#else
 #pragma omp target teams distribute parallel for simd collapse(2)
-=======
->>>>>>> c59ebef48b268784afda093a81cc51df5b00af35
+#endif 
     for (j=1; j < nj-1; j++) {
         for (i=1; i < ni-1; i++) {
             i00 = I2D(ni, i, j);
@@ -38,14 +47,12 @@ void step_kernel_cpu(int ni,
             temp_out[i00] = temp_in[i00] + tfac*(d2tdx2 + d2tdy2);
         } // end for
     }//end for
-<<<<<<< HEAD
-=======
 
-    
->>>>>>> c59ebef48b268784afda093a81cc51df5b00af35
 }// end kernel
 
 #pragma omp end declare target
+
+
 
 int main(int argc, char *argv[])
 {
@@ -134,11 +141,20 @@ int main(int argc, char *argv[])
 	// TODO: Check how host can also participate in computation
         // acc_set_device_num(tid+1, acc_device_not_host);
 
-    temp1 = temp1_h + tid*rows*LDA;
-    temp2 = temp2_h + tid*rows*LDA;
+	// #ifdef OMPTARGET_UVM
+	  // cudaMallocManaged((void**)&temp1, sizeof(double) * (rows+2)*LDA);
+	//  cudaMallocManaged((void**)&temp2, sizeof(double) * (rows+2)*LDA);
+	// #else
+	temp1 = temp1_h + tid*rows*LDA;
+	temp2 = temp2_h + tid*rows*LDA;
+	//#endif
 
     printf("ThreadID %d \t Device %d running %ul part of temperature array \n", tid, chosenDev, tid*rows*LDA);
+    //    #ifdef OMPTARGET_UVM
+    ///#pragma omp target data map(tofrom:temp1[0:(rows+2)*LDA], temp2[0:(rows+2)*LDA]) device(chosenDev) is_device_ptr(temp2, temp1) 
+    // #else 
 #pragma omp target data map(tofrom:temp1[0:(rows+2)*LDA], temp2[0:(rows+2)*LDA]) device(chosenDev)
+	  // #endif 
   {
 	for(istep=0; istep < nstep; istep++)
         {
