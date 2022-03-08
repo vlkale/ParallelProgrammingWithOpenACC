@@ -1,4 +1,6 @@
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,6 +67,7 @@ int main(int argc, char *argv[])
     int tag2 = 2;
     int rcProc;
 
+#ifdef HAVE_MPI
     MPI_Status status;
     MPI_Status statii[4];
     MPI_Request sendLeft;
@@ -77,11 +80,14 @@ int main(int argc, char *argv[])
     MPI_Comm_size (MPI_COMM_WORLD, &numProcs);
     MPI_Comm_rank (MPI_COMM_WORLD, &procID);
 
+    #endif
+
+    int numTasks;
     printf("starting program\n");
     
     if(argc < 6)
     {
-        printf("Usage: %s <num GPUs> <ni> <nj> <nstep> <output file>\n", argv[0]);
+        printf("Usage: %s <num GPUs> <ni> <nj> <nstep> <output file> <(numChunks)> \n", argv[0]);
         exit(1);
     }
     NUM_THREADS = atoi(argv[1]);
@@ -89,6 +95,10 @@ int main(int argc, char *argv[])
     nj = atoi(argv[3]);
     nstep = atoi(argv[4]);
     // fp = atos(argv[5]);
+    if(argc >= 6)
+      numTasks = atoi( argv[6]);
+    else
+      numTasks = NUM_THREADS;
     int numProcesses = numProcs; // placeholder for divider on nj
 
     temp1_h = (double *)malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
@@ -154,27 +164,32 @@ int main(int argc, char *argv[])
     
     srand(	gettimeofday(&tim, NULL));
 
-#pragma omp parallel private(istep, chosenDev)
+    // numTasks = 128;
+
+#pragma omp parallel private(istep, chosenDev) 
 {
   double *temp1, *temp2, *temp_tmp;
   int tid = omp_get_thread_num();
   //	chosenDev =  rand()%numDevices;
-  chosenDev =  tid%numDevices; // tid modulo number of devices per MPI process
+ 
   // TODO: Check how host can also participate in computation
   // acc_set_device_num(tid+1, acc_device_not_host);
   
-  temp1 = temp1_h + tid*rows*LDA;
-  temp2 = temp2_h + tid*rows*LDA;
   
   printf("Rank %d \t ThreadID %d \t Device %d running %ul part of temperature array \n", procID, tid, chosenDev, tid*rows*LDA);
     
   
   for(istep=0; istep < nstep; istep++)
     {
+#pragma omp parallel for schedule(dynamic, 1)	
+      for (int taskNum  =0 ; taskNum < numTasks; taskNum++)
+	{
+	  chosenDev =  tid%numDevices; // tid modulo number of devices per MPI process
+	  //	  chosenDev = gpu_Scheduler();
 	  
-      step_kernel_cpu(ni+2, rows+2, tfac, temp1, temp2, chosenDev);
-      
-#pragma omp barrier
+	  step_kernel_cpu(ni+2, rows+2, tfac, temp1, temp2, chosenDev);
+	  
+	}
       
       if (numProcs > 1)
 	{
@@ -238,11 +253,12 @@ int main(int argc, char *argv[])
         temp_tmp = temp1;
 	temp1 = temp2;
 	temp2 = temp_tmp;
-	}	
+	}
+ }
+      
 	/*update the final result to host*/
         // #pragma acc update host(temp1[LDA:rows*LDA])
-	
- }
+       
 
     gettimeofday(&tim, NULL);
     end = tim.tv_sec + (tim.tv_usec/1000000.0);
@@ -274,9 +290,12 @@ int main(int argc, char *argv[])
       for (i=0; i < ni; i++) {                                                                                                                                                                                                                                                                
          fprintf(fp, "%.4f\n", j, i, temp1_h[i + ni*j]);                                                                                                                                       
       }                                                                                                                                                                                                            
-    }                                                                                                                                                                                                                   
+    }
+
     fclose(fp);
+#ifdef HAVE_MPI
     rcProc = MPI_Finalize();
-    printf("MPI_Finalize return code is %d \n", rcProc); 
+    printf("MPI_Finalize return code is %d \n", rcProc);
+#endif 
 	
 } // end main 

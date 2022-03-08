@@ -5,19 +5,23 @@
 include make-cori-gpu.def
 
 
-all: omp_heat_multi mpi_omp_heat_multi mpi_omp_uvm_heat_multi omp_uvm_heat_multi ven_heat_multi
+all: omp_heat_multi omp_uvm_heat_multi mpi_omp_heat_multi mpi_omp_uvm_heat_multi ven_heat_multi
 
 #all: mpi_omp_heat_multi mpi_omp_uvm_heat_multi
 
 
 mpi_omp_uvm_heat_multi: mpi_omp_uvm_heat_multi.c
-	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS)  -v mpi_omp_uvm_heat_multi.c -o mpi_omp_uvm_heat_multi
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS) -DHAVE_MPI -v mpi_omp_uvm_heat_multi.c -o mpi_omp_uvm_heat_multi
+
+
+mpi_omp_usm_heat_multi: mpi_omp_heat_multi.c
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS)  -DHAVE_MPI -v mpi_omp_heat_multi.c -o mpi_omp_usm_heat_multi
 
 omp_uvm_heat_multi: omp_uvm_heat_multi.c
 	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS)  -v omp_uvm_heat_multi.c -o omp_uvm_heat_multi
 
 mpi_omp_heat_multi: mpi_omp_heat_multi.c
-	$(CC) $(CCFLAGS) $(OPENMPFLAGS)  -v mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS)  -v -DHAVE_MPI mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
 
 omp_heat_multi: omp_heat_multi.c
 	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -v omp_heat_multi.c -o omp_heat_multi 

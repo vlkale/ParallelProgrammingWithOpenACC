@@ -33,7 +33,7 @@ void step_kernel_cpu(int ni,
 #pragma omp target teams distribute parallel for simd collapse(2) is_device_ptr(temp_in, temp_out)
 #else
 #pragma omp target teams distribute parallel for simd collapse(2)
-#endif 
+#endif
     for (j=1; j < nj-1; j++) {
         for (i=1; i < ni-1; i++) {
             i00 = I2D(ni, i, j);
