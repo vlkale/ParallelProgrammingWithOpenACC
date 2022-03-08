@@ -12,7 +12,6 @@
 #include <time.h>
 
 
-
 #define I2D(ni, i, j) ((i) + (ni)*(j))
 
 

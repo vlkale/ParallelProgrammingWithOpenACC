@@ -12,6 +12,10 @@
 #define I2D(ni, i, j) ((i) + (ni)*(j))
 #define BLOCKING_MPI 0
 
+#ifdef OMPTARGET_UVM
+#pragma omp requires unified_shared_memory
+#endif 
+
 #pragma omp declare target
 void step_kernel_cpu(int ni,
                      int nj,
@@ -20,8 +24,11 @@ void step_kernel_cpu(int ni,
                      double *temp_out) {
     int i, j, i00, im10, ip10, i0m1, i0p1;
     double d2tdx2, d2tdy2;
-
+#ifdef OMPTARGET_UVM
+#pragma omp target teams distribute parallel for simd collapse(2) is_device_ptr(temp_in, temp_out)
+#else
 #pragma omp target teams distribute parallel for simd collapse(2)
+#endif
     for (j=1; j < nj-1; j++) {
         for (i=1; i < ni-1; i++) {
             i00 = I2D(ni, i, j);
@@ -42,9 +49,7 @@ void step_kernel_cpu(int ni,
 
 
 int main(int argc, char *argv[])
-{
-
-  
+{  
     int ni, nj, nstep;
     double tfac, *temp1_h, *temp2_h;
     int i, j, i2d, istep;
@@ -76,8 +81,6 @@ int main(int argc, char *argv[])
     MPI_Comm_rank (MPI_COMM_WORLD, &procID);
 
     printf("starting program\n");
-
-
     
     if(argc < 6)
     {
@@ -91,7 +94,6 @@ int main(int argc, char *argv[])
     // fp = atos(argv[5]);
     int numProcesses = numProcs; // placeholder for divider on nj
 
-   
     temp1_h = (double *)malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
     temp2_h = (double *)malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
     
@@ -126,6 +128,7 @@ int main(int argc, char *argv[])
         i2d = i + (ni+2)*j;
 	temp1_h[i2d] = temp_br + (temp_tr-temp_br)*(double)j/(double)(nj+1);
     }
+    
     memcpy(temp2_h, temp1_h, sizeof(double)*(ni+2)*(nj/numProcesses + 2));
 
     tfac = 0.2;
@@ -167,7 +170,7 @@ int main(int argc, char *argv[])
 
     printf("Rank %d \t ThreadID %d \t Device %d running %ul part of temperature array \n", procID, tid, chosenDev, tid*rows*LDA);
     
-    
+
 #pragma omp target data map(tofrom:temp1[0:(rows+2)*LDA], temp2[0:(rows+2)*LDA]) device(chosenDev)
   {
 	for(istep=0; istep < nstep; istep++)
