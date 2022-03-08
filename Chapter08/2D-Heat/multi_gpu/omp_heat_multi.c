@@ -20,8 +20,8 @@ void step_kernel_cpu(int ni,
     int i, j, i00, im10, ip10, i0m1, i0p1;
     double d2tdx2, d2tdy2;
 
-#pragma omp teams distribute parallel for simd collapse(2)
-     {
+        #pragma omp target teams distribute parallel for simd
+    {
     for (j=1; j < nj-1; j++) {
         for (i=1; i < ni-1; i++) {
             i00 = I2D(ni, i, j);
@@ -32,9 +32,10 @@ void step_kernel_cpu(int ni,
             d2tdx2 = temp_in[im10] - 2*temp_in[i00] + temp_in[ip10];
             d2tdy2 = temp_in[i0m1] - 2*temp_in[i00] + temp_in[i0p1];
             temp_out[i00] = temp_in[i00] + tfac*(d2tdx2 + d2tdy2);
+
         } // end for
     }//end for
-     }// end target 
+    }// end target 
 }// end kernel
 
 #pragma omp end declare target
