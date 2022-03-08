@@ -1,5 +1,5 @@
-include make-crusher.def
-
+# include make-crusher.def
+include make-summit.def
 
 all: omp_heat_multi mpi_omp_heat_multi ven_heat_multi 
 
