@@ -1,4 +1,4 @@
-#include <mpi.h> 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,8 +20,7 @@ void step_kernel_cpu(int ni,
     int i, j, i00, im10, ip10, i0m1, i0p1;
     double d2tdx2, d2tdy2;
 
-        #pragma omp target teams distribute parallel for simd
-    {
+#pragma omp target teams distribute parallel for simd collapse(2)
     for (j=1; j < nj-1; j++) {
         for (i=1; i < ni-1; i++) {
             i00 = I2D(ni, i, j);
@@ -35,7 +34,6 @@ void step_kernel_cpu(int ni,
 
         } // end for
     }//end for
-    }// end target 
 }// end kernel
 
 #pragma omp end declare target

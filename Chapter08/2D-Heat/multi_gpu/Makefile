@@ -1,10 +1,11 @@
-include make-crusher.def
-
+#include make-crusher.def
+#include make-perlmutter.de
+include make-cori-gpu.def
 
 all: omp_heat_multi mpi_omp_heat_multi ven_heat_multi 
 
 mpi_omp_heat_multi: mpi_omp_heat_multi.c
-	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -g -v mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -lmpi -v mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
 
 omp_heat_multi: omp_heat_multi.c
 	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -v omp_heat_multi.c -o omp_heat_multi 
