@@ -1,0 +1,41 @@
+# Makefile define file for mesh computation program on spock
+FC=ftn
+F77=ftn
+
+CLANG=clang
+CLANGPP=clang++
+
+CC=$(CLANG)
+CXX=$(CLANGPP)
+CC=mpicc
+CXX=mpicxx
+
+
+
+VENDORCC=nvcc
+heatKERNEL=heat_kernel.cu
+venHeatMulti=cuda_heat_multi.c 
+
+# Use -Mpreprocess since we are compiling a .f file
+FCFLAGS=-fPIC -std=gnu -cpp -ffree-form -g -I/usr/local/tools/mvapich-pgi-2.1/include/ -L/opt/cray/pe/pmi/5.0.14/lib64
+
+# Basic flag for trading off numerical accuracy with performance
+# -Mfprelaxed -Mpfi -Mpfo
+
+# check usage of this  flag
+# -Msafeptr
+
+F77FLAGS=-fPIC -cpp -g -L/opt/cray/pe/pmi/5.0.14/lib64
+CXXFLAGS=  -std=c++14
+CCFLAGS= 
+
+#OPENACCFLAGS= -fopenacc -lmpi -DHAVE_OPENACC -mp -acc -ta=amdgcn-amd-amdhsa,nofma -Minfo=gfx90a
+OPENACCFLAGS= -lmpi -DHAVE_OPENACC -mp -acc 
+# OPENMPFLAGS= -openmp  -L/usr/local/tools/mvapich2-pgi-2.1/lib/ -DHAVE_OPENMP
+# OPENMPFLAGS= -fopenmp=libomp5 -DHAVE_OPENMP -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
+
+#OPENMPFLAGS= -fopenmp -DHAVE_OPENMP -fopenmp-targets=nvptx64 -I${CUDA_PATH}/include -L${CUDA_PATH}/lib
+OPENMPFLAGS= -fopenmp -DHAVE_OPENMP -I${CUDA_PATH}/include -L${CUDA_PATH}/lib
+
+
+OMPTARGETFLAGS = -DOMPTARGET -DOMPTARGET_MAP -DOMPTARGET_MANAGED -DOMPTARGET_UVM
