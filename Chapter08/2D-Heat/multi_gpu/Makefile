@@ -1,30 +1,52 @@
+include make-crusher.def
 
 
+all: omp_heat_multi mpi_omp_heat_multi ven_heat_multi 
 
-CLANG= clang
-CLANGP= clang++
-CC= $(CLANG)
-CXX = $(CLANGP)
-
-all: omp_heat_multi cuda_heat_multi acc_heat_multi
-
+mpi_omp_heat_multi: mpi_omp_heat_multi.c
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -g -v mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
 
 omp_heat_multi: omp_heat_multi.c
-	$(CC) -fopenmp -fopenmp-targets=nvptx64 -Xopenmp-target -march=sm_80 -fopenmp-version=51 omp_heat_multi.c -o omp_heat_multi
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -v omp_heat_multi.c -o omp_heat_multi 
+
+ven_heat_multi:
+	$(VENDORCC) -O3 $(venHeatMulti) -o ven_heat_multi
+	$(VENDORCC) -O3 --ptx $(heatKERNEL)
 
 
-cuda_heat_multi: cuda_heat_multi.c
-	nvcc -O3 cuda_heat_multi.c -o cuda_heat_multi -lcuda
-	nvcc -O3 -arch=sm_80 -fmad=false --ptx heat_kernel.cu
+hip_heat_multi:
+	$(VENDORCC) -O3 hip_heat_multi.c -o hip_heat_multi
+	$(VENDORCC) -O3 --ptx $(heatKERNEL)
 
+
+cuda_heat_multi:
+	$(VENDORCC) -O3 cuda_heat_multi.c -o cuda_heat_multi
+	$(VENDORCC) -O3 -arch=sm_80 -fmad=false --ptx heat_kernel.cu
 
 acc_heat_multi: acc_heat_multi.c
-	pgcc -O3 -mp -acc -ta=ampere:cc80,nofma -Minfo=accel acc_heat_multi.c -o acc_heat_multi
+	$(CC) -O3  $(OPENACCFLAGS) acc_heat_multi.c -o acc_heat_multi
 
 clean:
-	rm omp_heat_multi acc_heat_multi cuda_heat_multi
+	rm omp_heat_multi acc_heat_multi cuda_heat_multi mpi_omp_heat_multi
+
+
+test:
+	./omp_heat_multi 1 256 256 200 output-omp-multi.dat
+	./omp_heat_multi 2 256 256 200 output-omp-multi.dat
+	./omp_heat_multi 3 256 256 200 output-omp-multi.dat
+	./omp_heat_multi 4 256 256 200 output-omp-multi.dat
+
+
 
 run:
+	./omp_heat_multi 1 1024 1024 20000 output-omp-multi.dat
+	./omp_heat_multi 2 1024 1024 20000 output-omp-multi.dat
 	./omp_heat_multi 4 1024 1024 20000 output-omp-multi.dat
+	./mpi_omp_heat_multi 1 1024 1024 20000 output-mpi-omp-multi.dat
+	./mpi_omp_heat_multi 2 1024 1024 20000 output-mpi-omp-multi.dat
+	./mpi_omp_heat_multi 4 1024 1024 20000 output-mpi-omp-multi.dat
+	./ven_heat_multi 1 1024 1024 20000 output-ven-multi.dat
+	./ven_heat_multi 2 1024 1024 20000 output-ven-multi.dat
+	./ven_heat_multi 4 1024 1024 20000 output-ven-multi.dat
 	./acc_heat_multi 2 1024 1024 20000 output-acc-multi.dat
 	./cuda_heat_multi 2 1024 1024 20000 output-cuda-multi.dat

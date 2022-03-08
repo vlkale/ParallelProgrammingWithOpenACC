@@ -39,7 +39,6 @@ void step_kernel_cpu(int ni,
     int i, j, i00, im10, ip10, i0m1, i0p1;
     double d2tdx2, d2tdy2;
 
-
     // loop over all points in domain (not boundary points)
 #pragma acc kernels present(temp_in[0:ni*nj], temp_out[0:ni*nj]) 
 {
@@ -145,7 +144,7 @@ int main(int argc, char *argv[])
 
 	omp_set_num_threads(NUM_THREADS);
     int rows, LDA;
-
+    
     rows = nj/NUM_THREADS;
     LDA = ni + 2;
 
@@ -164,22 +163,22 @@ int main(int argc, char *argv[])
 	for(istep=0; istep < nstep; istep++)
 	{
 		step_kernel_cpu(ni+2, rows+2, tfac, temp1, temp2);
-
+		
         /*update the lower halo to the host except the last device*/
         if(tid != NUM_THREADS-1)
         {
             #pragma acc update host(temp2[rows*LDA:LDA])
         }
-
+	
         /*update the upper halo to the host except the first device*/
         if(tid != 0)
         {
             #pragma acc update host(temp2[LDA:LDA])
         }
 	
-		/*make sure another device has already updated the data into host*/
-		#pragma omp barrier
-        /*update the upper halo to the other device*/
+	/* make sure another device has already updated the data into host */
+#pragma omp barrier
+        /* update the upper halo to the other device*/
         if(tid != 0)
         {
             #pragma acc update device(temp2[0:LDA])
