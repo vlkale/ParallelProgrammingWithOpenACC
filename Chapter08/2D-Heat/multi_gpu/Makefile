@@ -5,13 +5,22 @@
 include make-cori-gpu.def
 
 
-all: omp_heat_multi mpi_omp_heat_multi ven_heat_multi 
+all: omp_heat_multi mpi_omp_heat_multi mpi_omp_uvm_heat_multi omp_uvm_heat_multi ven_heat_multi
+
+#all: mpi_omp_heat_multi mpi_omp_uvm_heat_multi
+
+
+mpi_omp_uvm_heat_multi: mpi_omp_uvm_heat_multi.c
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS)  -v mpi_omp_uvm_heat_multi.c -o mpi_omp_uvm_heat_multi
+
+omp_uvm_heat_multi: omp_uvm_heat_multi.c
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS)  -v omp_uvm_heat_multi.c -o omp_uvm_heat_multi
 
 mpi_omp_heat_multi: mpi_omp_heat_multi.c
-	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS)  -v mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS)  -v mpi_omp_heat_multi.c -o mpi_omp_heat_multi 
 
 omp_heat_multi: omp_heat_multi.c
-	$(CC) $(CCFLAGS) $(OPENMPFLAGS) $(OMPTARGETFLAGS) -v omp_heat_multi.c -o omp_heat_multi 
+	$(CC) $(CCFLAGS) $(OPENMPFLAGS) -v omp_heat_multi.c -o omp_heat_multi 
 
 ven_heat_multi:
 	$(VENDORCC) -O3 $(venHeatMulti) -o ven_heat_multi
@@ -31,7 +40,7 @@ acc_heat_multi: acc_heat_multi.c
 	$(CC) -O3  $(OPENACCFLAGS) acc_heat_multi.c -o acc_heat_multi
 
 clean:
-	rm omp_heat_multi acc_heat_multi cuda_heat_multi mpi_omp_heat_multi
+	rm omp_heat_multi acc_heat_multi cuda_heat_multi mpi_omp_heat_multi mpi_omp_uvm_heat_multi omp_uvm_heat_multi
 
 
 test:
