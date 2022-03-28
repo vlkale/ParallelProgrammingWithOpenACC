@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <omp.h>
 
+#include <cuda.h> 
 #include <time.h>
 
 #define I2D(ni, i, j) ((i) + (ni)*(j))
