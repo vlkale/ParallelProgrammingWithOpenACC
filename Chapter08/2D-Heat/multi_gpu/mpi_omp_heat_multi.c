@@ -17,6 +17,7 @@
 #define NUMTASKS 16
 #define CHUNKSZ 4
 
+// Note: the below #pragma should be deleted if using NVC OpenMP implementation. It is needed when using unified shared memory for the LLVM OpenMP implementation.
 #ifdef OMPTARGET_UVM
 #pragma omp requires unified_shared_memory
 #endif 
