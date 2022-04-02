@@ -109,9 +109,15 @@ int main(int argc, char *argv[])
     
     int numProcesses = numProcs; // placeholder for divider on nj
 
-    temp1_h = (double *)malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
-    temp2_h = (double *)malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
-    
+
+#ifdef OMPTARGET_UVM
+   cudaMallocManaged((void*) temp1_h, (ni+2)*(nj/numProcesses + 2);
+   cudaMallocManaged((void*) temp2_h, (ni+2)*(nj/numProcesses + 2);
+#else
+    temp1_h = (double *) malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2))
+    temp2_h = (double *) malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
+#endif
+
     for (j=1; j < nj/numProcesses +1; j++) {
         for (i=1; i < ni+1; i++) {
             i2d = i + (ni+2)*j;
@@ -167,7 +173,7 @@ int main(int argc, char *argv[])
     printf("Number of devices available is : %d\n", numAvailDevices);
     printf("Number of devices used is : %d\n", numDevices);
     
-    srand(	gettimeofday(&tim, NULL));
+    srand(gettimeofday(&tim, NULL));
 #pragma omp parallel private(istep, chosenDev)
 {
 	double *temp1, *temp2, *temp_tmp;
@@ -221,8 +227,6 @@ int main(int argc, char *argv[])
 	  #pragma omp barrier
 #endif
 
-
-
 	  #ifdef HAVE_MPI
 	  if (numProcs > 1)
 	    {
@@ -242,7 +246,7 @@ int main(int argc, char *argv[])
 		 }
 	       if(procID < numProcs - 1)
 		 {
-		   MPI_Irecv(&temp2[(rows+1)*LDA], LDA, MPI_DOUBLE, procID + 1, 0 , MPI_COMM_WORLD, &requests[numRequests++]);
+		   MPI_Irecv(&temp2[(rows+1)*LDA], LDA, MPI_DOUBLE, procID + 1, 0, MPI_COMM_WORLD, &requests[numRequests++]);
 		   MPI_Isend(&temp2[(rows)*LDA], LDA, MPI_DOUBLE, procID + 1, 0, MPI_COMM_WORLD, &requests[numRequests++]);
 		 }
 	      
@@ -273,19 +277,20 @@ int main(int argc, char *argv[])
 	    }
 	  #endif 
 	  	  
-	  // TODO: downsample print to test correctness	  
+	 
 	  /*make sure another device has already updated the data into host*/
-	//#pragma omp master
-	//  MPI_Barrier(MPI_COMM_WORLD);
-
+	
 	
         /* update the upper halo to the other device */ 
 	// exchange
 	// assume rows per process is a multiple of rows per device , rows per process ;
 
 #ifndef OMPTARGET_UVM
-	  	
-        #pragma omp barrier
+
+  #pragma omp master
+     MPI_Barrier(MPI_COMM_WORLD);
+
+  #pragma omp barrier
 	  
         if(procID > 0)
 	  {
@@ -299,12 +304,12 @@ int main(int argc, char *argv[])
         temp_tmp = temp1;
 	temp1 = temp2;
 	temp2 = temp_tmp;
-  }
+  } // end. timestep loop 
     
 	/*update the final result to host*/
         // #pragma acc update host(temp1[LDA:rows*LDA])
 
-#ifdef OMPTARGET_UVM
+#ifndef OMPTARGET_UVM
 #pragma omp target update from(temp1[LDA:rows*LDA])
 #endif
 	
@@ -329,12 +334,14 @@ int main(int argc, char *argv[])
       for (i=0; i < ni; i++) {                                                                                                                                                                                                                                                                
          fprintf(fp, "%d \t %d \t %.4f\n", j, i, temp1_h[i + ni*j]);                                    
       }                                                                                                                                                        
-    }                                                                                                                                                                                                                   
-    fclose(fp);
-
+    }
+		    
+    fclose(fp); 
+		     
     #ifdef HAVE_MPI
     rcProc = MPI_Finalize();
     printf("MPI_Finalize return code is %d \n", rcProc);
     #endif 
-	
+
+		     
 } // end main 
