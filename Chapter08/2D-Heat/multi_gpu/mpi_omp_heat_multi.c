@@ -11,6 +11,12 @@
 
 #include <time.h>
 
+
+/* This code runs a stencil on multiple GPUs of a node of a supercomputer, using MPI+OpenMP+OpenMP-offload. For sharing data across GPUs, it optionally has UVM support. 
+" but this is not needed for the NVC OpenMP implementation. 
+*/ 
+
+
 #define I2D(ni, i, j) ((i) + (ni)*(j))
 #define BLOCKING_MPI 0
 
