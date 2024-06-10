@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
    cudaMallocManaged((void*) temp1_h, (ni+2)*(nj/numProcesses + 2);
    cudaMallocManaged((void*) temp2_h, (ni+2)*(nj/numProcesses + 2);
 #else
-    temp1_h = (double *) malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2))
+    temp1_h = (double *) malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
     temp2_h = (double *) malloc(sizeof(double)*(ni+2)*(nj/numProcesses + 2));
 #endif
 
